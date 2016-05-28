@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>PluckNode</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-header">PluckNode</h1>
+    <div class="form-group">
+      <button id="run" class="btn btn-default">RUN</button>
+    </div>
+  </div>
+  <script src="build/pluck-node.js"></script>
+  <script>
+  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+  window.addEventListener("DOMContentLoaded", function() {
+    "use strict";
+
+    var audioContext = new AudioContext();
+    var timerId = 0;
+
+    function chord(t0, notes) {
+      notes.forEach(function(note, i) {
+        var t1 = t0 + i * 0.05;
+        var t2 = t1 + 2;
+        var pluck = new PluckNode(audioContext, 400, 20);
+        var gain = audioContext.createGain();
+        var freq = 220 * Math.pow(2, note / 12);
+
+        pluck.frequency.setValueAtTime(freq, t1);
+        pluck.frequency.exponentialRampToValueAtTime(freq * 1.01, t2);
+
+        pluck.start(t1);
+        pluck.stop(t2);
+        pluck.connect(gain);
+
+        gain.gain.setValueAtTime(0.8, t1);
+        gain.gain.linearRampToValueAtTime(0.0, t2);
+        gain.connect(audioContext.destination);
+      });
+    }
+
+    function compose() {
+      var t0 = audioContext.currentTime;
+      var notes = sample([
+        [ 0, 4, 9, 11 ],
+        [ 0, 2, 7, 11 ],
+        [ 0, 2, 5, 11 ],
+      ]);
+
+      chord(t0, notes);
+    }
+
+    function sample(list) {
+      return list[(Math.random() * list.length)|0];
+    }
+
+    document.getElementById("run").addEventListener("click", function(e) {
+      if (timerId !== 0) {
+        clearInterval(timerId);
+        timerId = 0;
+        e.target.textContent = "RUN";
+      } else {
+        timerId = setInterval(compose, 1000);
+        e.target.textContent = "STOP";
+      }
+    });
+  });
+  </script>
+</body>
+</html>
