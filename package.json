@@ -1,0 +1,45 @@
+{
+  "name": "pluck-node",
+  "description": "PluckNode for Web Audio API",
+  "version": "0.0.0",
+  "author": "Nao Yonamine <mohayonao@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/mohayonao/pluck-node/issues"
+  },
+  "devDependencies": {
+    "browserify": "^13.0.1",
+    "istanbul": "^0.4.3",
+    "mocha": "^2.5.3",
+    "uglify-js": "^2.6.2",
+    "web-audio-test-api": "^0.5.2"
+  },
+  "files": [
+    "lib",
+    "package.json",
+    "README.md"
+  ],
+  "homepage": "http://mohayonao.github.io/pluck-node/",
+  "keywords": [
+    "pluck",
+    "karplusstrong",
+    "webaudioapi"
+  ],
+  "license": "MIT",
+  "main": "lib/PluckNode.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mohayonao/pluck-node.git"
+  },
+  "scripts": {
+    "build": "npm run build-browser && npm run build-minify",
+    "build-browser": "browserify lib/PluckNode.js --standalone PluckNode -o build/pluck-node.js",
+    "build-minify": "uglifyjs build/pluck-node.js -o build/pluck-node.min.js",
+    "cover": "istanbul cover node_modules/mocha/bin/_mocha",
+    "postversion": "git push && git push --tags",
+    "prepublish": "npm run test && npm run build",
+    "preversion": "npm run test",
+    "test": "mocha",
+    "travis": "npm run test",
+    "version": "npm run build && git add -A build"
+  }
+}
