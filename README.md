@@ -3,7 +3,7 @@
 [![NPM Version](http://img.shields.io/npm/v/pluck-node.svg?style=flat-square)](https://www.npmjs.org/package/pluck-node)
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](http://mohayonao.mit-license.org/)
 
-> PluckNode for Web Audio API
+> Pluck String AudioNode for Web Audio API
 
 ## Installation
 
@@ -49,7 +49,7 @@ pluck.stop(audioContext.currentTime + 4);
 At first, call `install()` method.
 
 ```js
-require("PluckNode").install();
+require("pluck-node").install();
 ```
 
 ```html
@@ -64,6 +64,7 @@ Then, you can use `createPluck(color, decayTime)` method at AudioContext.
 http://mohayonao.github.io/pluck-node/
 
 ## Algorithm
+This algorithm is inspired from [Karplus–Strong string synthesis](https://en.wikipedia.org/wiki/Karplus%E2%80%93Strong_string_synthesis).
 
 1. create OscillatorNode
 2. OscillatorNode connect to WaveShaperNode which has random curve
