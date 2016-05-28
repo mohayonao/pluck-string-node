@@ -23,7 +23,33 @@
     </div>
     <div>Pluck String AudioNode for Web Audio API | <a href="https://github.com/mohayonao/pluck-node" target="github">GitHub</a></div>
     <div id="app">
-      <button id="button" class="btn btn-default">Start</button>
+      <div>
+        <div class="form-group row">
+          <div class="col-sm-2">
+            <button class="btn btn-default" v-on:click="play">{{ isPlaying ? "Stop" : "Start" }}</button>
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-2 form-control-label">Octave</label>
+          <div class="col-sm-1">{{ octave }}</div>
+          <div class="col-sm-9">
+            <input type="range" class="form-control" min="-1" max="2" v-model="octave">
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-2 form-control-label">Color</label>
+          <div class="col-sm-1">{{ color }}</div>
+          <div class="col-sm-9">
+            <input type="range" class="form-control" min="200" max="10000" v-model="color">
+          </div>
+        </div>
+        <div class="form-group row">
+          <label class="col-sm-2 form-control-label">Decay Time</label>
+          <div class="col-sm-1">{{ decayTime }}</div>
+          <div class="col-sm-9">
+            <input type="range" class="form-control" min="1" max="120" v-model="decayTime">
+          </div>
+        </div>
       </div>
       <div class="panel panel-default">
         <div class="panel-heading">
@@ -35,6 +61,7 @@
       </div>
     </div>
   </div>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.js"></script>
   <script src="//mohayonao.github.io/web-audio-scheduler/build/web-audio-scheduler.min.js"></script>
   <script src="build/pluck-node.js"></script>
@@ -44,17 +71,24 @@
   window.addEventListener("DOMContentLoaded", function() {
     "use strict";
 
-    var isPlaying = false;
+    window.app = new Vue({
+      el: "#app",
+      data: {
+        isPlaying: false,
+        octave: 0,
+        color: 400,
+        decayTime: 20
+      },
+      methods: {
+        play: function() {
+          this.isPlaying = !this.isPlaying;
 
-    document.getElementById("button").addEventListener("click", function(e) {
-      isPlaying = !isPlaying;
-
-      if (isPlaying) {
-        sched.start(compose);
-        e.target.textContent = "Stop";
-      } else {
-        sched.stop(true);
-        e.target.textContent = "Start";
+          if (this.isPlaying) {
+            sched.start(compose);
+          } else {
+            sched.stop(true);
+          }
+        }
       }
     });
 
@@ -68,39 +102,36 @@
     var audioContext = new AudioContext();
     var sched = new WebAudioScheduler({ context: audioContext });
 
-    function chord(e) {
-      var playbackTime = e.playbackTime;
-      var notes = e.args.notes;
+    function pluck(e) {
+      var t0 = e.playbackTime;
+      var t1 = t0 + 1.5;
+      var pluck = new PluckNode(audioContext, app.color, app.decayTime);
+      var gain = audioContext.createGain();
+      var freq = 220 * Math.pow(2, e.args.note / 12) * Math.pow(2, app.octave);
 
-      notes.forEach(function(note, i) {
-        var t0 = playbackTime + i * 0.025;
-        var t1 = t0 + 2;
-        var pluck = new PluckNode(audioContext, 400, 20);
-        var gain = audioContext.createGain();
-        var freq = 220 * Math.pow(2, note / 12);
+      pluck.frequency.setValueAtTime(freq, t0);
+      pluck.frequency.exponentialRampToValueAtTime(freq * 1.01, t1);
+      pluck.start(t0);
+      pluck.stop(t1);
+      pluck.connect(gain);
 
-        pluck.frequency.setValueAtTime(freq, t0);
-        pluck.frequency.exponentialRampToValueAtTime(freq * 1.01, t1);
-
-        pluck.start(t0);
-        pluck.stop(t1);
-        pluck.connect(gain);
-
-        gain.gain.setValueAtTime(0.8, t0);
-        gain.gain.linearRampToValueAtTime(0.0, t1);
-        gain.connect(audioContext.destination);
-      });
+      gain.gain.setValueAtTime(0.6, t0);
+      gain.gain.linearRampToValueAtTime(0.0, t1);
+      gain.connect(audioContext.destination);
     }
 
     function compose(e) {
       var t0 = e.playbackTime;
-      var notes = sample([
+      var chord = sample([
         [ 0, 4, 9, 11 ],
         [ 0, 2, 7, 11 ],
         [ 0, 2, 5, 11 ],
       ]);
 
-      sched.insert(t0, chord, { notes: notes });
+      chord.forEach(function(note, index) {
+        sched.insert(t0 + index * 0.025, pluck, { note: note });
+      });
+
       sched.insert(t0 + 1, compose);
     }
 
