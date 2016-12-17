@@ -2,9 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>PluckNode</title>
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
-  <link rel="stylesheet" href=//cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css>
+  <title>PluckStringNode</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css">
   <style>
       #code { padding: 0; margin: 0; background: white; border: none }
       #app { margin: 10px 0 }
@@ -14,14 +14,14 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <h1>pluck-node</h1>
+      <h1>pluck-string-node</h1>
       <div>
-        <a href="https://travis-ci.org/mohayonao/pluck-node"><img src="http://img.shields.io/travis/mohayonao/pluck-node.svg?style=flat-square"/></a>
-        <a href="https://www.npmjs.org/package/pluck-node"><img src="http://img.shields.io/npm/v/pluck-node.svg?style=flat-square"/></a>
-        <a href="http://mohayonao.mit-license.org/"><img src="http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square"/></a>
+        <a href="https://travis-ci.org/mohayonao/pluck-string-node"><img src="https://img.shields.io/travis/mohayonao/pluck-string-node.svg?style=flat-square"/></a>
+        <a href="https://www.npmjs.org/package/pluck-string-node"><img src="https://img.shields.io/npm/v/pluck-string-node.svg?style=flat-square"/></a>
+        <a href="https://mohayonao.mit-license.org/"><img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square"/></a>
       </div>
     </div>
-    <div>Pluck String AudioNode for Web Audio API | <a href="https://github.com/mohayonao/pluck-node" target="github">GitHub</a></div>
+    <div>Pluck String AudioNode for Web Audio API | <a href="https://github.com/mohayonao/pluck-string-node" target="github">GitHub</a></div>
     <div id="app">
       <div>
         <div class="form-group row">
@@ -40,14 +40,14 @@
           <label class="col-sm-2 form-control-label">Color</label>
           <div class="col-sm-1">{{ color }}</div>
           <div class="col-sm-9">
-            <input type="range" class="form-control" min="200" max="10000" v-model="color">
+            <input type="range" class="form-control" min="400" max="2000" step="50" v-model="color">
           </div>
         </div>
         <div class="form-group row">
-          <label class="col-sm-2 form-control-label">Decay Time</label>
-          <div class="col-sm-1">{{ decayTime }}</div>
+          <label class="col-sm-2 form-control-label">TimeConstant</label>
+          <div class="col-sm-1">{{ timeConstant }}</div>
           <div class="col-sm-9">
-            <input type="range" class="form-control" min="1" max="120" v-model="decayTime">
+            <input type="range" class="form-control" min="0" max="20" step="0.5" v-model="timeConstant">
           </div>
         </div>
       </div>
@@ -61,10 +61,9 @@
       </div>
     </div>
   </div>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.js"></script>
-  <script src="//mohayonao.github.io/web-audio-scheduler/build/web-audio-scheduler.min.js"></script>
-  <script src="build/pluck-node.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.js"></script>
+  <script src="build/pluck-string-node.js"></script>
   <script>
   window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -76,18 +75,17 @@
       data: {
         isPlaying: false,
         octave: 0,
-        color: 400,
-        decayTime: 20
+        color: 800,
+        timeConstant: 5
       },
       methods: {
         play: function() {
-          this.isPlaying = !this.isPlaying;
-
-          if (this.isPlaying) {
-            sched.start(compose);
+          if (timerId === 0) {
+            play();
           } else {
-            sched.stop(true);
+            pause();
           }
+          this.isPlaying = timerId !== 0;
         }
       }
     });
@@ -100,39 +98,56 @@
   </script>
   <script id="example">
     var audioContext = new AudioContext();
-    var sched = new WebAudioScheduler({ context: audioContext });
+    var timerId = 0;
 
-    function pluck(e) {
-      var t0 = e.playbackTime;
-      var t1 = t0 + 1.5;
-      var pluck = new PluckNode(audioContext, app.color, app.decayTime);
+    function pluck(destination, playbackTime, opts) {
+      var duration = opts.duration;
+      var t0 = playbackTime;
+      var t1 = t0 + duration * 1.5;
+      var pluck = new PluckStringNode(audioContext);
       var gain = audioContext.createGain();
-      var freq = 220 * Math.pow(2, e.args.note / 12) * Math.pow(2, app.octave);
 
-      pluck.frequency.setValueAtTime(freq, t0);
-      pluck.frequency.exponentialRampToValueAtTime(freq * 1.01, t1);
+      pluck.color = opts.color;
+      pluck.timeConstant = opts.timeConstant;
+      pluck.frequency.value = opts.frequency;
       pluck.start(t0);
       pluck.stop(t1);
       pluck.connect(gain);
 
-      gain.gain.setValueAtTime(0.6, t0);
+      gain.gain.setValueAtTime(0.5, t0);
       gain.gain.linearRampToValueAtTime(0.0, t1);
       gain.connect(audioContext.destination);
     }
 
-    function compose(e) {
-      var t0 = e.playbackTime;
+    function play() {
+      var destination = audioContext.destination;
+      var playbackTime = audioContext.currentTime;
       var chord = sample([
         [ 0, 4, 9, 11 ],
         [ 0, 2, 7, 11 ],
         [ 0, 2, 5, 11 ],
       ]);
+      var duration = 1.0;
 
       chord.forEach(function(note, index) {
-        sched.insert(t0 + index * 0.025, pluck, { note: note });
+        var frequency = 220 * Math.pow(2, note / 12) * Math.pow(2, app.octave);
+        var color = app.color;
+        var timeConstant = app.timeConstant;
+
+        pluck(destination, playbackTime + index * 0.03, {
+          frequency   : frequency,
+          duration    : duration,
+          color       : color,
+          timeConstant: timeConstant,
+        });
       });
 
-      sched.insert(t0 + 1, compose);
+      timerId = setTimeout(play, duration * 1000);
+    }
+
+    function pause() {
+      clearTimeout(timerId);
+      timerId = 0;
     }
 
     function sample(list) {
