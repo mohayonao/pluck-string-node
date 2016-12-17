@@ -1,42 +1,44 @@
 {
-  "name": "pluck-node",
-  "description": "PluckNode for Web Audio API",
+  "name": "pluck-string-node",
+  "description": "Pluck String AudioNode for Web Audio API",
   "version": "1.0.0",
   "author": "Nao Yonamine <mohayonao@gmail.com>",
   "bugs": {
-    "url": "https://github.com/mohayonao/pluck-node/issues"
+    "url": "https://github.com/mohayonao/pluck-string-node/issues"
   },
   "devDependencies": {
-    "browserify": "^13.0.1",
-    "istanbul": "^0.4.3",
-    "mocha": "^2.5.3",
-    "uglify-js": "^2.6.2",
+    "browserify": "^13.1.1",
+    "eslint": "^3.12.2",
+    "mocha": "^3.2.0",
+    "npm-run-all": "^3.1.2",
+    "run-with-mocha": "^1.1.0",
+    "uglifyify": "^3.0.4",
     "web-audio-test-api": "^0.5.2"
   },
   "files": [
-    "lib",
     "package.json",
-    "README.md"
+    "README.md",
+    "index.js"
   ],
-  "homepage": "http://mohayonao.github.io/pluck-node/",
+  "homepage": "https://mohayonao.github.io/pluck-string-node/",
   "keywords": [
+    "karplus-strong",
     "pluck",
-    "karplusstrong",
-    "webaudioapi"
+    "webaudio"
   ],
   "license": "MIT",
-  "main": "lib/PluckNode.js",
+  "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/mohayonao/pluck-node.git"
+    "url": "git://github.com/mohayonao/pluck-string-node.git"
   },
   "scripts": {
-    "build": "npm run build-browser && npm run build-minify",
-    "build-browser": "browserify lib/PluckNode.js --standalone PluckNode -o build/pluck-node.js",
-    "build-minify": "uglifyjs build/pluck-node.js -o build/pluck-node.min.js",
-    "cover": "istanbul cover node_modules/mocha/bin/_mocha",
+    "build": "npm-run-all build:*",
+    "build:browser": "browserify --standalone PluckStringNode -o build/pluck-string-node.js index.js",
+    "build:minify": "browserify --standalone PluckStringNode -o build/pluck-string-node.min.js -t uglifyify index.js ",
+    "lint": "eslint index.js test",
     "postversion": "git push && git push --tags",
-    "prepublish": "npm run test && npm run build",
+    "prepublish": "npm-run-all test build",
     "preversion": "npm run test",
     "test": "mocha",
     "travis": "npm run test",
