@@ -26,8 +26,8 @@ function PluckStringNode(audioContext, opts) {
   function start(t0) {
     OscillatorNode.prototype.start.call(oscillator, t0);
 
-    biquadFilter.frequency.setValueAtTime(color, t0);
-    biquadFilter.frequency.setTargetAtTime(color * 0.005, t0, timeConstant);
+    biquadFilter.frequency.value = color;
+    biquadFilter.frequency.setTargetAtTime(0, t0, timeConstant);
   }
 
   Object.defineProperties(oscillator, {
