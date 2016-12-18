@@ -1,12 +1,7 @@
 /* global Float32Array, Symbol, AudioNode, OscillatorNode */
 
-var WS_CURVE_SIZE = 255;
-var curve = new Float32Array(WS_CURVE_SIZE);
-
-for (var i = 0; i < WS_CURVE_SIZE; i++) {
-  var x = i - (WS_CURVE_SIZE >> 1);
-  curve[i] = Math.sin(19 * Math.sin(97 * x) + 47 * Math.sin(31 * Math.sin(23 * x)));
-}
+var ua = (global.navigator && global.navigator.userAgent.toLowerCase()) || "";
+var isSafari = ua.indexOf("safari") !== -1 && ua.indexOf("chrome") === -1;
 
 function PluckStringNode(audioContext, opts) {
   opts = opts || {};
@@ -16,6 +11,7 @@ function PluckStringNode(audioContext, opts) {
   var biquadFilter = audioContext.createBiquadFilter();
   var color = typeof opts.color === "number" ? opts.color : 800;
   var timeConstant = typeof opts.timeConstant === "number" ? opts.timeConstant : 5;
+  var curve = createWaveShaperCurve(255);
 
   oscillator.type = "triangle";
   oscillator.connect(pluckShaper);
@@ -79,6 +75,22 @@ if (typeof Symbol === "function" && typeof Symbol.hasInstance === "symbol") {
       return value instanceof AudioNode && typeof value.color === "number" && typeof value.timeConstant === "number";
     }
   });
+}
+
+function createWaveShaperCurve(length) {
+  var offset = isSafari ? 1 : 0;
+  var curve = new Float32Array(length + offset);
+
+  for (var i = 0; i < length; i++) {
+    curve[i + offset] = Math.random() * 2 - 1;
+  }
+  curve[(length >> 1) + offset] = 0;
+
+  if (offset === 1) {
+    curve[0] = curve[1];
+  }
+
+  return curve;
 }
 
 module.exports = PluckStringNode;
